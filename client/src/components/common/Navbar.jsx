@@ -97,23 +97,23 @@ export const Navbar = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="bg-medical-white border-b border-medical-border px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <nav className="bg-medical-white border-b border-medical-border px-3 sm:px-4 py-2.5 sm:py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           {/* Hospital Logo & Brand Title */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-primary to-primary-light flex items-center justify-center text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
-              <Activity className="w-6 h-6 stroke-[2.2]" />
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-primary to-primary-light flex items-center justify-center text-white shadow-md shadow-primary/20 group-hover:scale-105 transition-transform shrink-0">
+              <Activity className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-extrabold tracking-tight text-secondary">
+                <span className="text-base sm:text-xl font-extrabold tracking-tight text-secondary truncate">
                   BRAHM SHAKTI
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded bg-accent text-accent-dark font-bold uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-accent text-accent-dark font-bold uppercase tracking-wider shrink-0">
                   HOSPITAL
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-medical-muted tracking-wide -mt-0.5">
+              <p className="text-[10px] sm:text-[11px] font-medium text-medical-muted tracking-wide -mt-0.5 hidden sm:block truncate">
                 250-Bedded Tertiary Healthcare · Caring for you for Life
               </p>
             </div>
@@ -194,56 +194,68 @@ export const Navbar = () => {
           </div>
 
           {/* Action CTAs */}
-          <div className="hidden sm:flex items-center gap-3">
-            <Link
-              to="/appointments"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Quick Emergency Phone Pill for Mobile */}
+            <a
+              href="tel:7840089703"
+              className="flex md:hidden items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 text-status-error border border-red-200 text-xs font-bold"
+              title="24x7 Emergency Helpline"
             >
-              <Calendar className="w-4 h-4" />
-              <span>Book Appointment</span>
-            </Link>
+              <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
+              <span className="text-[11px] font-black">Emergency</span>
+            </a>
 
-            {isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  to={getDashboardRoute()}
-                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-secondary text-white hover:bg-secondary-light text-sm font-semibold shadow-sm transition-all"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-primary-light" />
-                  <span className="capitalize">{role} Portal</span>
-                </Link>
-                <button
-                  onClick={logout}
-                  title="Logout"
-                  className="p-2.5 text-medical-muted hover:text-status-error hover:bg-red-50 rounded-xl transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
+            <div className="hidden sm:flex items-center gap-3">
               <Link
-                to="/login"
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-medical-border text-secondary hover:border-primary hover:text-primary text-sm font-semibold transition-all"
+                to="/appointments"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                <User className="w-4 h-4 text-primary" />
-                <span>Portal Login</span>
+                <Calendar className="w-4 h-4" />
+                <span>Book Appointment</span>
               </Link>
-            )}
-          </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 rounded-xl text-secondary hover:bg-medical-coolgray"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={getDashboardRoute()}
+                    className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-secondary text-white hover:bg-secondary-light text-sm font-semibold shadow-sm transition-all"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-primary-light" />
+                    <span className="capitalize">{role} Portal</span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    title="Logout"
+                    className="p-2.5 text-medical-muted hover:text-status-error hover:bg-red-50 rounded-xl transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-medical-border text-secondary hover:border-primary hover:text-primary text-sm font-semibold transition-all"
+                >
+                  <User className="w-4 h-4 text-primary" />
+                  <span>Portal Login</span>
+                </Link>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="xl:hidden p-2 rounded-xl text-secondary hover:bg-medical-coolgray"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="xl:hidden border-t border-medical-border mt-3 pt-3 pb-4 space-y-1 animate-in fade-in duration-200">
+          <div className="xl:hidden border-t border-medical-border mt-3 pt-3 pb-6 space-y-1 max-h-[calc(100vh-75px)] overflow-y-auto animate-in fade-in duration-200">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -263,24 +275,24 @@ export const Navbar = () => {
               <Link
                 to="/services/opd"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-2 text-sm text-secondary hover:bg-medical-coolgray"
+                className="block px-4 py-2 text-sm text-secondary hover:bg-medical-coolgray font-medium"
               >
                 OPD Clinical Services
               </Link>
               <Link
                 to="/services/ipd"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-2 text-sm text-secondary hover:bg-medical-coolgray"
+                className="block px-4 py-2 text-sm text-secondary hover:bg-medical-coolgray font-medium"
               >
                 IPD Inpatient Admissions
               </Link>
             </div>
 
-            <div className="pt-3 px-2 flex flex-col gap-2">
+            <div className="pt-3 px-2 flex flex-col gap-2.5">
               <Link
                 to="/appointments"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Book Appointment</span>
@@ -310,12 +322,23 @@ export const Navbar = () => {
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-secondary text-secondary font-semibold"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-secondary text-secondary font-semibold text-sm"
                 >
                   <User className="w-4 h-4" />
                   <span>Staff & Patient Portal Login</span>
                 </Link>
               )}
+
+              {/* Mobile Drawer Helpline Strip */}
+              <div className="mt-2 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-status-error font-bold">
+                  <PhoneCall className="w-4 h-4" />
+                  <span>24x7 Emergency Line</span>
+                </div>
+                <a href="tel:7840089703" className="text-secondary font-black hover:underline">
+                  7840089703
+                </a>
+              </div>
             </div>
           </div>
         )}

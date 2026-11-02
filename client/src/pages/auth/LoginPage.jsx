@@ -7,7 +7,9 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
-  KeyRound
+  KeyRound,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -20,7 +22,16 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || null;
+  const getRedirectDest = () => {
+    if (!location.state?.from) return null;
+    if (typeof location.state.from === 'string') return location.state.from;
+    const pathname = location.state.from.pathname || '';
+    const search = location.state.from.search || '';
+    return pathname + search;
+  };
+
+  const from = getRedirectDest();
+  const isFromAppointments = from && from.includes('/appointments');
 
   const getDashboardForRole = (role) => {
     switch (role) {
@@ -78,7 +89,8 @@ export const LoginPage = () => {
       const res = await login(target.email, target.password);
       setSubmitting(false);
       if (res?.success) {
-        navigate(getDashboardForRole(roleName), { replace: true });
+        const dest = from || getDashboardForRole(roleName);
+        navigate(dest, { replace: true });
       }
     }
   };
@@ -100,6 +112,21 @@ export const LoginPage = () => {
             Secure Role-Based Portal for Staff, Clinicians, Suppliers & Patients
           </p>
         </div>
+
+        {/* Appointment Required Notice Banner */}
+        {isFromAppointments && (
+          <div className="bg-gradient-to-r from-primary-50 to-teal-50 border-2 border-primary/30 p-4 rounded-2xl flex items-start gap-3 text-secondary shadow-soft animate-in fade-in duration-300">
+            <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="font-bold text-sm text-primary">Login Required to Book Appointment</div>
+              <p className="text-xs text-secondary/80 leading-relaxed">
+                Please sign in with your patient account or click the <strong>Patient</strong> demo badge below. You will be immediately redirected to complete your appointment booking.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* 1-Click Demo Accounts Selector */}
         <div className="bg-white p-5 rounded-2xl border border-primary/20 shadow-soft space-y-3">
@@ -185,7 +212,7 @@ export const LoginPage = () => {
 
           <div className="pt-4 border-t border-medical-border flex items-center justify-between text-xs text-medical-muted">
             <span>New patient seeking care?</span>
-            <Link to="/register" className="text-primary font-bold hover:underline">
+            <Link to="/register" state={{ from }} className="text-primary font-bold hover:underline">
               Register New Account ↗
             </Link>
           </div>

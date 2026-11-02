@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Activity, User, Mail, Phone, Lock, UserPlus, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -12,6 +12,17 @@ export const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getRedirectDest = () => {
+    if (!location.state?.from) return null;
+    if (typeof location.state.from === 'string') return location.state.from;
+    const pathname = location.state.from.pathname || '';
+    const search = location.state.from.search || '';
+    return pathname + search;
+  };
+
+  const from = getRedirectDest();
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +42,7 @@ export const RegisterPage = () => {
     setSubmitting(false);
 
     if (res?.success) {
-      navigate('/patient/dashboard');
+      navigate(from || '/patient/dashboard', { replace: true });
     }
   };
 
@@ -134,7 +145,7 @@ export const RegisterPage = () => {
 
           <div className="pt-4 border-t border-medical-border text-center text-xs text-medical-muted">
             <span>Already have an existing profile?</span>{' '}
-            <Link to="/login" className="text-primary font-bold hover:underline">
+            <Link to="/login" state={{ from }} className="text-primary font-bold hover:underline">
               Log in here ↗
             </Link>
           </div>

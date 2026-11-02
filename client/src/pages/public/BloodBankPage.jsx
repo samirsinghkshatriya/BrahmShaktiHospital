@@ -369,8 +369,8 @@ export const BloodBankPage = () => {
 
       {/* Blood Request Modal */}
       {requestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-medical-border pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-red-100 text-status-error flex items-center justify-center font-bold">

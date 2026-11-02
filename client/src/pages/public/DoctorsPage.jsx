@@ -19,6 +19,7 @@ export const DoctorsPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -81,9 +82,23 @@ export const DoctorsPage = () => {
 
       {/* Filter and Content Area */}
       <section className="max-w-7xl mx-auto px-4">
+        {/* Mobile Filter Toggle */}
+        <div className="flex items-center justify-between lg:hidden mb-4 p-3 rounded-xl bg-white border border-medical-border">
+          <div className="text-xs font-bold text-secondary flex items-center gap-2">
+            <Filter className="w-4 h-4 text-primary" />
+            <span>Search & Specialty Filters</span>
+          </div>
+          <button
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold transition-all"
+          >
+            {filtersOpen ? 'Hide Filters ▲' : 'Show Filters ▼'}
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Filter Panel */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className={`lg:col-span-3 space-y-6 ${filtersOpen ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white p-6 rounded-2xl border border-medical-border shadow-soft space-y-6">
               <div className="flex items-center justify-between pb-3 border-b border-medical-border">
                 <div className="flex items-center gap-2 font-bold text-secondary text-sm">

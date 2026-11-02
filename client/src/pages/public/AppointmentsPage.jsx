@@ -16,9 +16,11 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export const AppointmentsPage = () => {
   const [searchParams] = useSearchParams();
+  const { user, role } = useAuth();
   const preDept = searchParams.get('department') || '';
   const preDoctor = searchParams.get('doctor') || '';
   const confirmedIdParam = searchParams.get('confirmedId') || '';
@@ -33,15 +35,24 @@ export const AppointmentsPage = () => {
   const [appointmentType, setAppointmentType] = useState('OPD Consultation');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState('10:00 AM - 10:30 AM');
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [patientEmail, setPatientEmail] = useState('');
+  const [patientName, setPatientName] = useState(user?.name || '');
+  const [patientPhone, setPatientPhone] = useState(user?.phone || '');
+  const [patientEmail, setPatientEmail] = useState(user?.email || '');
   const [patientAge, setPatientAge] = useState('35');
   const [gender, setGender] = useState('Male');
   const [symptoms, setSymptoms] = useState('');
 
   const [bookingLoading, setBookingLoading] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+
+  // Auto-fill user information if user is loaded asynchronously
+  useEffect(() => {
+    if (user) {
+      if (!patientName && user.name) setPatientName(user.name);
+      if (!patientEmail && user.email) setPatientEmail(user.email);
+      if (!patientPhone && user.phone) setPatientPhone(user.phone);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -233,25 +244,25 @@ export const AppointmentsPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-medical-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-4 border-t border-medical-border">
               <button
                 onClick={() => setConfirmedBooking(null)}
-                className="px-6 py-3 rounded-xl border border-secondary text-secondary hover:bg-secondary hover:text-white text-xs font-bold transition-all"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-secondary text-secondary hover:bg-secondary hover:text-white text-xs font-bold transition-all text-center"
               >
                 Book Another Appointment
               </button>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handlePrint}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-secondary text-white hover:bg-secondary-light text-xs font-bold transition-all shadow-sm"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-secondary text-white hover:bg-secondary-light text-xs font-bold transition-all shadow-sm"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Slip</span>
                 </button>
                 <Link
                   to="/"
-                  className="px-6 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md"
+                  className="w-full sm:w-auto text-center px-6 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md"
                 >
                   Return to Home
                 </Link>
@@ -260,7 +271,37 @@ export const AppointmentsPage = () => {
           </div>
         ) : (
           /* Booking Form */
-          <div className="bg-white rounded-3xl border border-medical-border shadow-soft p-6 sm:p-10 space-y-8">
+          <div className="bg-white rounded-3xl border border-medical-border shadow-soft p-5 sm:p-10 space-y-6 sm:space-y-8">
+            {/* Authenticated User Profile Pill */}
+            {user && (
+              <div className="bg-primary-50/60 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary text-white font-bold flex items-center justify-center shrink-0 text-sm shadow-sm">
+                    {user.name?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <div className="font-bold text-secondary text-sm flex items-center gap-2 flex-wrap">
+                      <span>{user.name}</span>
+                      <span className="px-2 py-0.5 rounded bg-primary text-white text-[10px] font-bold uppercase tracking-wider">
+                        {role || 'Patient'}
+                      </span>
+                    </div>
+                    <div className="text-medical-muted text-[11px] mt-0.5">
+                      {user.email} · Verified hospital profile
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <Link
+                    to="/login"
+                    className="text-primary font-bold hover:underline"
+                  >
+                    Switch Account ↗
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Step 1: Department & Doctor */}
               <div className="space-y-4">
@@ -355,13 +396,13 @@ export const AppointmentsPage = () => {
                   <label className="text-xs font-bold uppercase text-medical-muted tracking-wider block">
                     Choose Time Slot
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {timeSlots.map((slot) => (
                       <button
                         type="button"
                         key={slot}
                         onClick={() => setTimeSlot(slot)}
-                        className={`p-2.5 rounded-xl text-xs font-bold border transition-all ${
+                        className={`p-2.5 rounded-xl text-[11px] sm:text-xs font-bold border transition-all text-center ${
                           timeSlot === slot
                             ? 'bg-primary text-white border-primary shadow-sm'
                             : 'bg-medical-coolgray text-secondary border-medical-border hover:border-primary'

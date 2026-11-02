@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Stethoscope,
   Clock,
@@ -11,24 +11,35 @@ import {
   MapPin,
   ArrowLeft,
   ChevronRight,
-  PhoneCall
+  PhoneCall,
+  Lock
 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export const DoctorProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Quick slot booking state
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSlot, setSelectedSlot] = useState('10:00 AM - 10:30 AM');
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone, setPatientPhone] = useState('');
+  const [patientName, setPatientName] = useState(user?.name || '');
+  const [patientPhone, setPatientPhone] = useState(user?.phone || '');
   const [symptoms, setSymptoms] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (!patientName && user.name) setPatientName(user.name);
+      if (!patientPhone && user.phone) setPatientPhone(user.phone);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -58,6 +69,17 @@ export const DoctorProfilePage = () => {
 
   const handleDirectBooking = async (e) => {
     e.preventDefault();
+
+    if (!isAuthenticated) {
+      toast.error('Please log in to your patient account to book an appointment');
+      navigate('/login', {
+        state: {
+          from: `/appointments?doctor=${doctor.id}&department=${doctor.departmentId}`
+        }
+      });
+      return;
+    }
+
     if (!patientName || !patientPhone) {
       toast.error('Please enter patient name and contact number');
       return;
@@ -152,18 +174,18 @@ export const DoctorProfilePage = () => {
                   <p className="text-xs font-bold text-primary">{doctor.designation}</p>
                   <p className="text-xs text-medical-muted">{doctor.qualification}</p>
 
-                  <div className="pt-2 flex flex-wrap gap-4 text-xs text-secondary justify-center sm:justify-start">
-                    <div className="p-2.5 rounded-xl bg-medical-coolgray border border-medical-border">
+                  <div className="pt-2 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap text-xs text-secondary justify-center sm:justify-start">
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-medical-coolgray border border-medical-border text-center sm:text-left">
                       <span className="text-medical-muted block text-[10px] uppercase font-bold">Experience</span>
-                      <strong>{doctor.experienceYears}+ Years</strong>
+                      <strong className="text-xs sm:text-sm">{doctor.experienceYears}+ Years</strong>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-medical-coolgray border border-medical-border">
-                      <span className="text-medical-muted block text-[10px] uppercase font-bold">Consultation Fee</span>
-                      <strong className="text-primary font-bold">₹{doctor.consultationFee}</strong>
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-medical-coolgray border border-medical-border text-center sm:text-left">
+                      <span className="text-medical-muted block text-[10px] uppercase font-bold">Fee</span>
+                      <strong className="text-primary font-bold text-xs sm:text-sm">₹{doctor.consultationFee}</strong>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-medical-coolgray border border-medical-border">
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-medical-coolgray border border-medical-border text-center sm:text-left">
                       <span className="text-medical-muted block text-[10px] uppercase font-bold">Rating</span>
-                      <strong className="text-amber-600">★ {doctor.rating || 4.9}</strong>
+                      <strong className="text-amber-600 text-xs sm:text-sm">★ {doctor.rating || 4.9}</strong>
                     </div>
                   </div>
                 </div>
@@ -217,7 +239,7 @@ export const DoctorProfilePage = () => {
 
           {/* Right Column: Interactive Appointment Booking Form */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white p-8 rounded-2xl border-2 border-primary/20 shadow-elevated space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-primary/20 shadow-elevated space-y-5">
               <div>
                 <span className="px-2.5 py-1 rounded bg-accent text-accent-dark text-[10px] font-bold uppercase tracking-wider">
                   Confirmed OPD Booking
@@ -226,9 +248,33 @@ export const DoctorProfilePage = () => {
                   Book Slot with {doctor.name}
                 </h3>
                 <p className="text-xs text-medical-muted mt-1">
-                  Select your preferred appointment date and slot. Subsidized fee: ₹{doctor.consultationFee}.
+                  Select your preferred consultation date and slot. Subsidized fee: ₹{doctor.consultationFee}.
                 </p>
               </div>
+
+              {/* Login required banner */}
+              {!isAuthenticated ? (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>Login required to book appointments.</span>
+                  </div>
+                  <Link
+                    to="/login"
+                    state={{ from: `/appointments?doctor=${doctor.id}&department=${doctor.departmentId}` }}
+                    className="px-3 py-1.5 rounded-lg bg-secondary text-white font-bold text-xs whitespace-nowrap hover:bg-secondary-light transition-all shadow-xs"
+                  >
+                    Sign In ↗
+                  </Link>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-primary-50 border border-primary/20 text-xs text-secondary flex items-center justify-between gap-2">
+                  <div className="truncate">
+                    <span className="text-medical-muted text-[10px] block uppercase font-bold">Booking Profile</span>
+                    <strong className="text-primary truncate">{user?.name}</strong> ({user?.email})
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleDirectBooking} className="space-y-4">
                 {/* Select Date */}
@@ -324,8 +370,17 @@ export const DoctorProfilePage = () => {
                   disabled={bookingLoading}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-md transition-all disabled:opacity-50"
                 >
-                  <Calendar className="w-4 h-4" />
-                  <span>{bookingLoading ? 'Confirming...' : 'Confirm Appointment'}</span>
+                  {isAuthenticated ? (
+                    <>
+                      <Calendar className="w-4 h-4" />
+                      <span>{bookingLoading ? 'Confirming...' : 'Confirm Appointment'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Sign In & Book Appointment</span>
+                    </>
+                  )}
                 </button>
               </form>
             </div>

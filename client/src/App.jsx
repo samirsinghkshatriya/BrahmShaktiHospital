@@ -70,7 +70,14 @@ export default function App() {
           <Route path="/departments/:id" element={<DepartmentDetailPage />} />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/doctors/:id" element={<DoctorProfilePage />} />
-          <Route path="/appointments" element={<AppointmentsPage />} />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute>
+                <AppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/services/opd" element={<OpdServicesPage />} />
           <Route path="/services/ipd" element={<IpdServicesPage />} />
           <Route path="/blood-bank" element={<BloodBankPage />} />
