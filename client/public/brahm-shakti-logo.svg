@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 90" fill="none">
+  <!-- Medical Crest / Trust Emblem -->
+  <g transform="translate(10, 10)">
+    <!-- Outer Shield with Trust Gold Border -->
+    <path d="M35 2 C55 2 68 14 68 32 C68 54 35 68 35 68 C35 68 2 54 2 32 C2 14 15 2 35 2 Z" fill="#0C2B4E" stroke="#C28B2B" stroke-width="2.5" />
+    <!-- Inner Radiant Fill -->
+    <path d="M35 7 C51 7 62 17 62 32 C62 50 35 62 35 62 C35 62 8 50 8 32 C8 17 19 7 35 7 Z" fill="#11365E" />
+    
+    <!-- Medical Cross with Glow -->
+    <rect x="31" y="16" width="8" height="32" rx="2" fill="#0284C7" />
+    <rect x="19" y="28" width="32" height="8" rx="2" fill="#0284C7" />
+    
+    <!-- Inner Golden Healing Lotus / Flame Core -->
+    <circle cx="35" cy="32" r="5" fill="#C28B2B" />
+    <path d="M35 22 C37 27 39 29 42 32 C39 35 37 37 35 42 C33 37 31 35 28 32 C31 29 33 27 35 22 Z" fill="#F8FAFC" />
+  </g>
+
+  <!-- Typography Lockup -->
+  <!-- Main Name: BRAHM SHAKTI -->
+  <text x="92" y="38" font-family="'Outfit', 'Plus Jakarta Sans', sans-serif" font-size="24" font-weight="800" fill="#0C2B4E" letter-spacing="0.5">
+    BRAHM SHAKTI
+  </text>
+  <text x="264" y="38" font-family="'Outfit', 'Plus Jakarta Sans', sans-serif" font-size="24" font-weight="700" fill="#0284C7" letter-spacing="0.5">
+    HOSPITAL
+  </text>
+
+  <!-- Tagline: Caring for you for Life -->
+  <text x="94" y="55" font-family="'Plus Jakarta Sans', sans-serif" font-size="11" font-weight="600" fill="#C28B2B" letter-spacing="0.8">
+    CARING FOR YOU FOR LIFE
+  </text>
+
+  <!-- Subtitle: Managed by Brahm Shakti Trust (Regd.) · Budh Vihar, New Delhi -->
+  <text x="94" y="69" font-family="'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="500" fill="#64748B" letter-spacing="0.2">
+    Managed by Brahm Shakti Trust (Regd.) &middot; Budh Vihar, New Delhi
+  </text>
+</svg>
