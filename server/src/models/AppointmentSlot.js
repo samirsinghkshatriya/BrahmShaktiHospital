@@ -1,15 +1,6 @@
 import mongoose from 'mongoose';
 
-/**
- * AppointmentSlot
- * ---------------
- * A concrete, bookable slot for a doctor on a specific date & time window.
- * Availability is derived from real records (capacity vs bookedCount) so that
- * booking is atomic and double-booking is prevented at the database level.
- *
- * This model is the source of truth for "available time slots" — the public
- * booking UI must never rely on hardcoded slot arrays.
- */
+
 const appointmentSlotSchema = new mongoose.Schema(
   {
     doctorId: { type: String, required: true, index: true },
