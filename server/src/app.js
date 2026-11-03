@@ -16,6 +16,7 @@ import supplierRoutes from './routes/supplierRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import newsRoutes from './routes/newsRoutes.js';
 import enquiryRoutes from './routes/enquiryRoutes.js';
+import labReportRoutes from './routes/labReportRoutes.js';
 
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
 import { isMongoConnected } from './config/db.js';
@@ -59,6 +60,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/enquiries', enquiryRoutes);
+app.use('/api/lab-reports', labReportRoutes);
 
 // Serve static client production build if available
 if (fs.existsSync(clientDistPath)) {

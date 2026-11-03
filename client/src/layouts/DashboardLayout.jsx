@@ -21,7 +21,9 @@ import {
   Truck,
   ClipboardList,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  KeyRound,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -29,9 +31,40 @@ import toast from 'react-hot-toast';
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
-  const { user, role, logout, switchDemoRole } = useAuth();
+  const [pwModalOpen, setPwModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const { user, role, logout, switchDemoRole, changePassword } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const openPwModal = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPwModalOpen(true);
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('New password and confirmation do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters.');
+      return;
+    }
+    setPwSaving(true);
+    const res = await changePassword(currentPassword, newPassword);
+    setPwSaving(false);
+    if (res?.success) {
+      setPwModalOpen(false);
+      toast.success('You can now continue with your new password.');
+    }
+  };
 
   const handleRoleChange = async (newRole) => {
     setRoleSwitcherOpen(false);
@@ -46,6 +79,7 @@ export const DashboardLayout = () => {
       else if (newRole === 'supplier') navigate('/supplier/dashboard');
       else if (newRole === 'receptionist') navigate('/receptionist/dashboard');
       else if (newRole === 'patient') navigate('/patient/dashboard');
+      else if (newRole === 'blood_bank_technician') navigate('/admin/blood-bank');
     } else {
       toast.error('Failed to switch role', { id: 'role-switch' });
     }
@@ -101,6 +135,13 @@ export const DashboardLayout = () => {
         { label: 'Book Appointments', path: '/admin/appointments', icon: Calendar },
         { label: 'Quick Billing Desk', path: '/admin/billing', icon: Receipt },
         { label: 'Doctors On Duty', path: '/doctors', icon: UserCheck }
+      ];
+    }
+
+    if (role === 'blood_bank_technician') {
+      return [
+        { label: 'Blood Bank Console', path: '/admin/blood-bank', icon: Droplets },
+        { label: 'Public Blood Bank', path: '/blood-bank', icon: ExternalLink }
       ];
     }
 
@@ -246,6 +287,7 @@ export const DashboardLayout = () => {
                     { id: 'pharmacist', label: 'Pharmacist' },
                     { id: 'supplier', label: 'Supplier' },
                     { id: 'receptionist', label: 'Receptionist' },
+                    { id: 'blood_bank_technician', label: 'Blood Bank Technician' },
                     { id: 'patient', label: 'Patient' }
                   ].map((r) => (
                     <button
@@ -264,6 +306,16 @@ export const DashboardLayout = () => {
             </div>
 
             <div className="h-6 w-px bg-medical-border hidden sm:block"></div>
+
+            {/* Change Password */}
+            <button
+              onClick={openPwModal}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-medical-border text-xs font-bold text-secondary hover:border-primary hover:text-primary transition-colors"
+              title="Change your password"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-primary" />
+              <span>Change Password</span>
+            </button>
 
             {/* Notification Bell */}
             <button
@@ -333,9 +385,98 @@ export const DashboardLayout = () => {
 
         {/* Main Routed Page Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          {/* First-login temporary password prompt (admin-issued doctor/staff accounts) */}
+          {user?.mustChangePassword && (
+            <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-black text-amber-900">You are using a temporary password</p>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    Your initial password (your birthdate) was issued by the Administrator. Please set a private password now.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={openPwModal}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-all shrink-0"
+              >
+                Change Password Now
+              </button>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>
+
+      {/* Change Password Modal */}
+      {pwModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-medical-border pb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                <KeyRound className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-secondary">Change Password</h3>
+                <p className="text-[11px] text-medical-muted">Set a private password for {user?.email}</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-medical-muted">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-medical-muted">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-medical-muted">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPwModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl border border-secondary text-secondary text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={pwSaving}
+                  className="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-md disabled:opacity-50"
+                >
+                  {pwSaving ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

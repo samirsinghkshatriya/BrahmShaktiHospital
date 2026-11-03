@@ -1,8 +1,26 @@
 import Patient from '../models/Patient.js';
+import Appointment from '../models/Appointment.js';
 import { isMongoConnected } from '../config/db.js';
 import { patientsData } from '../data/seedData.js';
 
 let inMemoryPatients = [...patientsData];
+
+const pad4 = (n) => String(n).padStart(4, '0');
+
+async function makeUHID() {
+  const year = new Date().getFullYear();
+  if (isMongoConnected) {
+    for (let i = 0; i < 5; i += 1) {
+      const count = await Patient.estimatedDocumentCount();
+      const candidate = `BSH-UHID-${year}-${pad4(count + 1 + i)}`;
+      // eslint-disable-next-line no-await-in-loop
+      const exists = await Patient.findOne({ uhid: candidate });
+      if (!exists) return candidate;
+    }
+    return `BSH-UHID-${year}-${Date.now().toString().slice(-6)}`;
+  }
+  return `BSH-UHID-${year}-${Date.now().toString().slice(-6)}`;
+}
 
 export const getPatients = async (req, res) => {
   try {
@@ -113,3 +131,93 @@ export const updatePatient = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Public self-registration during the booking flow -> issues a unique UHID
+export const registerPatientPublic = async (req, res) => {
+  try {
+    const { name, age, gender, phone, email, bloodGroup, address } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ success: false, message: 'Name and phone are required.' });
+    }
+
+    const uhid = await makeUHID();
+    const data = {
+      patientId: uhid,
+      uhid,
+      name,
+      age: Number(age) || 30,
+      gender: gender || 'Male',
+      phone,
+      email: email || '',
+      bloodGroup: bloodGroup || 'Unknown',
+      address: address || '',
+      status: 'Active'
+    };
+
+    if (isMongoConnected) {
+      const patient = await Patient.create(data);
+      return res.status(201).json({
+        success: true,
+        message: 'Patient registered. Your UHID has been generated.',
+        data: { uhid: patient.uhid, patientId: patient.patientId, name: patient.name, phone: patient.phone }
+      });
+    }
+
+    const created = { ...data, _id: `pat-${Date.now()}`, medicalHistory: [], admissions: [] };
+    inMemoryPatients.unshift(created);
+    return res.status(201).json({
+      success: true,
+      message: 'Patient registered. Your UHID has been generated.',
+      data: { uhid, patientId: uhid, name, phone }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Secure retrieval of a registered profile using mobile + UHID
+export const verifyPatient = async (req, res) => {
+  try {
+    const { phone, uhid } = req.body;
+    if (!phone || !uhid) {
+      return res.status(400).json({ success: false, message: 'Registered mobile number and UHID are required.' });
+    }
+
+    let patient = null;
+    if (isMongoConnected) {
+      patient = await Patient.findOne({ $and: [{ phone }, { $or: [{ uhid }, { patientId: uhid }] }] });
+    } else {
+      patient = inMemoryPatients.find((p) => p.phone === phone && (p.uhid === uhid || p.patientId === uhid));
+    }
+
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'No patient matched the provided mobile number and UHID.' });
+    }
+
+    // Return a minimal, safe profile — no sensitive medical history here.
+    const safeProfile = {
+      uhid: patient.uhid || patient.patientId,
+      patientId: patient.patientId,
+      name: patient.name,
+      phone: patient.phone,
+      email: patient.email || '',
+      age: patient.age,
+      gender: patient.gender
+    };
+
+    let appointmentCount = 0;
+    if (isMongoConnected) {
+      appointmentCount = await Appointment.countDocuments({ uhid: patient.uhid || patient.patientId });
+    } else {
+      appointmentCount = inMemoryAppointmentsCountForUHID(patient.patientId);
+    }
+
+    return res.status(200).json({ success: true, verified: true, data: safeProfile, appointmentCount });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+function inMemoryAppointmentsCountForUHID() {
+  return 0;
+}

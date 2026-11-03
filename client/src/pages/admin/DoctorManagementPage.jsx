@@ -32,6 +32,10 @@ export const DoctorManagementPage = () => {
   const [consultationFee, setConsultationFee] = useState('800');
   const [availableDays, setAvailableDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const [availableTimings, setAvailableTimings] = useState('09:00 AM - 02:00 PM');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [issuedCreds, setIssuedCreds] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchDoctors = async () => {
@@ -67,6 +71,9 @@ export const DoctorManagementPage = () => {
     setConsultationFee('800');
     setAvailableDays(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
     setAvailableTimings('09:00 AM - 02:00 PM');
+    setEmail('');
+    setPhone('');
+    setBirthdate('');
     setModalOpen(true);
   };
 
@@ -80,6 +87,9 @@ export const DoctorManagementPage = () => {
     setConsultationFee(String(doc.consultationFee));
     setAvailableDays(doc.availableDays || ['Mon', 'Wed', 'Fri']);
     setAvailableTimings(doc.availableTimings || '09:00 AM - 02:00 PM');
+    setEmail(doc.email || '');
+    setPhone(doc.phone || '');
+    setBirthdate(doc.birthdate || '');
     setModalOpen(true);
   };
 
@@ -101,6 +111,10 @@ export const DoctorManagementPage = () => {
       toast.error('Doctor name and department are required');
       return;
     }
+    if (!editingDoctor && (!email || !birthdate)) {
+      toast.error('Official email and birthdate are required to issue the doctor login (password = birthdate DDMMYYYY)');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -114,15 +128,21 @@ export const DoctorManagementPage = () => {
         experienceYears: Number(experienceYears),
         consultationFee: Number(consultationFee),
         availableDays,
-        availableTimings
+        availableTimings,
+        email,
+        phone,
+        birthdate
       };
 
       if (editingDoctor) {
         await api.put(`/doctors/${editingDoctor.id}`, payload);
         toast.success('Doctor details updated successfully');
       } else {
-        await api.post('/doctors', payload);
-        toast.success('Doctor added to hospital faculty');
+        const res = await api.post('/doctors', payload);
+        toast.success('Doctor added with a portal login account');
+        if (res.data?.credentials) {
+          setIssuedCreds({ name, ...res.data.credentials });
+        }
       }
 
       setModalOpen(false);
@@ -148,9 +168,35 @@ export const DoctorManagementPage = () => {
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Add New Doctor</span>
+          <span>Register New Doctor</span>
         </button>
       </div>
+
+      {/* Recently Issued Doctor Login Credentials (hand over to the doctor) */}
+      {issuedCreds && (
+        <div className="bg-white p-4 rounded-2xl border-2 border-primary/30 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-secondary uppercase tracking-wide">Doctor Portal Login Issued — {issuedCreds.name}</p>
+              <p className="text-[11px] text-medical-muted mt-0.5">
+                Email: <strong className="text-secondary">{issuedCreds.email}</strong>
+                {' · '}
+                Initial Password: <strong className="text-primary">{issuedCreds.initialPassword}</strong>
+                {' · '}(birthdate DDMMYYYY — doctor can change it after first login)
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIssuedCreds(null)}
+            className="px-3 py-1.5 rounded-lg border border-medical-border text-[11px] font-bold text-medical-muted hover:text-secondary self-start sm:self-auto"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-medical-border shadow-soft flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -352,6 +398,48 @@ export const DoctorManagementPage = () => {
                     className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-medical-muted">Official Email (Login ID)</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="firstname@gmail.com"
+                    required={!editingDoctor}
+                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-medical-muted">Phone</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91-98XXXXXXXX"
+                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-medical-muted">Birthdate (initial password = DDMMYYYY)</label>
+                <input
+                  type="date"
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  required={!editingDoctor}
+                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
+                />
+                {!editingDoctor && (
+                  <p className="text-[10px] text-medical-muted">
+                    A doctor portal login is auto-created with this email and the birthdate as the first-time password.
+                  </p>
+                )}
               </div>
 
               <div className="pt-3 flex justify-end gap-3">

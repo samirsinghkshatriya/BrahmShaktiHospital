@@ -37,8 +37,22 @@ const bloodInventorySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Adequate', 'Low Stock', 'Critical'],
+      enum: ['Adequate', 'Low Stock', 'Critical', 'Expired'],
       default: 'Adequate'
+    },
+    // Batch & expiry awareness (represents the oldest active batch for this
+    // group + component). Expired stock must never be issued to a patient.
+    batchNo: {
+      type: String,
+      default: ''
+    },
+    collectedDate: {
+      type: Date,
+      default: Date.now
+    },
+    expiryDate: {
+      type: Date,
+      default: null
     },
     lastUpdated: {
       type: Date,
@@ -48,8 +62,23 @@ const bloodInventorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+bloodInventorySchema.virtual('isExpired').get(function () {
+  return !!this.expiryDate && new Date(this.expiryDate).getTime() < Date.now();
+});
+
+bloodInventorySchema.virtual('daysToExpiry').get(function () {
+  if (!this.expiryDate) return null;
+  const diff = new Date(this.expiryDate).getTime() - Date.now();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+});
+
+bloodInventorySchema.set('toJSON', { virtuals: true });
+bloodInventorySchema.set('toObject', { virtuals: true });
+
 bloodInventorySchema.pre('save', function (next) {
-  if (this.unitsAvailable <= 3) {
+  if (this.isExpired) {
+    this.status = 'Expired';
+  } else if (this.unitsAvailable <= 3) {
     this.status = 'Critical';
   } else if (this.unitsAvailable <= this.minThreshold) {
     this.status = 'Low Stock';

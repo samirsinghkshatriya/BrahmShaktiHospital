@@ -1,51 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Droplets,
-  Heart,
-  Clock,
-  ShieldCheck,
-  CheckCircle2,
-  AlertTriangle,
-  PhoneCall,
-  PlusCircle,
-  FileText,
-  User,
-  Calendar,
-  Search,
-  Filter
+  Droplets, HeartHandshake, AlertTriangle, PhoneCall, ArrowRight,
+  ShieldCheck, Activity, FileText, HelpCircle, Loader2
 } from 'lucide-react';
 import api from '../../services/api';
-import toast from 'react-hot-toast';
 
 export const BloodBankPage = () => {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState('all');
-
-  // Request Blood Form
-  const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [patientName, setPatientName] = useState('');
-  const [bloodGroupReq, setBloodGroupReq] = useState('B+');
-  const [componentReq, setComponentReq] = useState('Packed Red Blood Cells');
-  const [unitsNeeded, setUnitsNeeded] = useState(1);
-  const [urgency, setUrgency] = useState('Urgent');
-  const [contactPhone, setContactPhone] = useState('');
-  const [requestHospital, setRequestHospital] = useState('Brahm Shakti Hospital');
-  const [reqLoading, setReqLoading] = useState(false);
-
-  // Voluntary Donation Form
-  const [donorName, setDonorName] = useState('');
-  const [donorPhone, setDonorPhone] = useState('');
-  const [donorAge, setDonorAge] = useState(26);
-  const [donorGroup, setDonorGroup] = useState('O+');
-  const [donationSuccess, setDonationSuccess] = useState(false);
 
   const fetchInventory = async () => {
     try {
       const res = await api.get('/blood-bank/inventory');
-      if (res.data.success) {
-        setInventory(res.data.data);
-      }
+      if (res.data.success) setInventory(res.data.data);
     } catch (err) {
       console.error('Error fetching blood inventory:', err);
     } finally {
@@ -53,74 +21,23 @@ export const BloodBankPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchInventory();
-  }, []);
+  useEffect(() => { fetchInventory(); }, []);
 
-  const bloodGroups = ['all', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  // Aggregate available (non-expired) units per blood group for a quick preview
+  const byGroup = inventory.reduce((acc, i) => {
+    if (i.isExpired || i.status === 'Expired') return acc;
+    acc[i.bloodGroup] = (acc[i.bloodGroup] || 0) + (i.unitsAvailable || 0);
+    return acc;
+  }, {});
+  const ORDER = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-  const filteredInventory = selectedGroupFilter === 'all'
-    ? inventory
-    : inventory.filter(i => i.bloodGroup === selectedGroupFilter);
-
-  const handleBloodRequestSubmit = async (e) => {
-    e.preventDefault();
-    if (!patientName || !contactPhone) {
-      toast.error('Please enter patient name and contact telephone');
-      return;
-    }
-
-    setReqLoading(true);
-    try {
-      const res = await api.post('/blood-bank/requests', {
-        patientName,
-        hospitalName: requestHospital,
-        bloodGroup: bloodGroupReq,
-        component: componentReq,
-        unitsNeeded: Number(unitsNeeded),
-        urgency,
-        contactPhone
-      });
-
-      if (res.data.success) {
-        toast.success(`Blood Request Registered! ID: ${res.data.data.requestId}`);
-        setRequestModalOpen(false);
-        // Clear
-        setPatientName('');
-        setContactPhone('');
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to submit blood request');
-    } finally {
-      setReqLoading(false);
-    }
-  };
-
-  const handleDonationSubmit = async (e) => {
-    e.preventDefault();
-    if (!donorName || !donorPhone) {
-      toast.error('Please provide your name and phone number');
-      return;
-    }
-
-    try {
-      const res = await api.post('/blood-bank/donations', {
-        donorName,
-        donorPhone,
-        donorAge: Number(donorAge),
-        bloodGroup: donorGroup,
-        unitsDonated: 1
-      });
-
-      if (res.data.success) {
-        setDonationSuccess(true);
-        toast.success('Thank you for pledging life-saving blood donation!');
-        fetchInventory();
-      }
-    } catch (err) {
-      toast.error('Failed to register donation');
-    }
-  };
+  const WORKFLOWS = [
+    { to: '/blood-bank/availability', icon: Activity, title: 'Live Availability', desc: 'Real-time, component-wise stock drawn from our blood bank inventory.', color: 'text-primary', bg: 'bg-primary/10' },
+    { to: '/blood-bank/donate', icon: HeartHandshake, title: 'Donate Blood', desc: 'Register as a voluntary donor. Our team screens and schedules your donation.', color: 'text-status-success', bg: 'bg-green-100' },
+    { to: '/blood-bank/request', icon: Droplets, title: 'Request Blood', desc: 'Raise a formal request that enters our verified review-and-issue lifecycle.', color: 'text-status-error', bg: 'bg-red-100' },
+    { to: '/blood-bank/eligibility', icon: ShieldCheck, title: 'Eligibility', desc: 'Who can donate, what defers you, and how the screening decision works.', color: 'text-primary', bg: 'bg-primary/10' },
+    { to: '/blood-bank/faq', icon: HelpCircle, title: 'FAQ', desc: 'Answers on donating, requesting, screening, and emergency steps.', color: 'text-secondary', bg: 'bg-medical-coolgray' },
+  ];
 
   return (
     <div className="space-y-14 pb-20">
@@ -132,375 +49,91 @@ export const BloodBankPage = () => {
               <Droplets className="w-3.5 h-3.5" />
               <span>24x7 Licensed Blood Bank</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-              Blood Bank & Component Separation
-            </h1>
+            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight">Blood Bank & Component Separation</h1>
             <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
               Serving emergency trauma, surgical suites, and patients across North-West Delhi with verified, infection-screened blood products.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => setRequestModalOpen(true)}
-              className="px-6 py-3.5 rounded-xl bg-status-error hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              <span>Request Blood Urgently</span>
-            </button>
-            <a
-              href="tel:7840089703"
-              className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-2"
-            >
-              <PhoneCall className="w-4 h-4 text-accent" />
-              <span>24x7 Desk: 7840089703</span>
+            <Link to="/blood-bank/request" className="px-6 py-3.5 rounded-xl bg-status-error hover:bg-red-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Request Blood
+            </Link>
+            <Link to="/blood-bank/donate" className="px-6 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+              <HeartHandshake className="w-4 h-4" /> Donate Blood
+            </Link>
+            <a href="tel:7840089703" className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-2">
+              <PhoneCall className="w-4 h-4 text-accent" /> 24x7 Desk: 7840089703
             </a>
           </div>
         </div>
       </section>
 
-      {/* Live Inventory Status Table */}
-      <section className="max-w-7xl mx-auto px-4 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Quick Availability Preview */}
+      <section className="max-w-7xl mx-auto px-4 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-secondary tracking-tight">
-              Current Blood Component Inventory
-            </h2>
-            <p className="text-xs text-medical-muted mt-1">
-              Live stock levels of Whole Blood, Packed RBCs, Platelets, FFP, and Cryoprecipitate.
-            </p>
+            <h2 className="text-2xl font-bold text-secondary tracking-tight">Live Blood Group Snapshot</h2>
+            <p className="text-xs text-medical-muted mt-1">Aggregated available units per group (excluding expired stock). Donor details are never shown publicly.</p>
           </div>
-
-          {/* Group Filter Pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {bloodGroups.map((bg) => (
-              <button
-                key={bg}
-                onClick={() => setSelectedGroupFilter(bg)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  selectedGroupFilter === bg
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'bg-white text-secondary border border-medical-border hover:border-primary'
-                }`}
-              >
-                {bg === 'all' ? 'All Groups' : bg}
-              </button>
-            ))}
-          </div>
+          <Link to="/blood-bank/availability" className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-medical-border bg-white text-secondary text-xs font-bold hover:border-primary transition-colors">
+            <FileText className="w-4 h-4 text-primary" /> View Full Component Stock <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {loading ? (
-          <div className="h-64 rounded-2xl bg-white border border-medical-border animate-shimmer"></div>
+          <div className="flex items-center justify-center gap-2 py-10 text-medical-muted text-sm"><Loader2 className="w-5 h-5 animate-spin" /> Loading live stock…</div>
         ) : (
-          <div className="bg-white rounded-2xl border border-medical-border shadow-soft overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-secondary text-white uppercase text-[11px] tracking-wider">
-                  <tr>
-                    <th className="py-4 px-6 font-bold">Blood Group</th>
-                    <th className="py-4 px-6 font-bold">Component</th>
-                    <th className="py-4 px-6 font-bold">Units Available</th>
-                    <th className="py-4 px-6 font-bold">Price / Unit</th>
-                    <th className="py-4 px-6 font-bold">Status</th>
-                    <th className="py-4 px-6 font-bold text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-medical-border text-secondary">
-                  {filteredInventory.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-medical-coolgray transition-colors">
-                      <td className="py-4 px-6 font-black text-sm text-secondary">
-                        <span className="w-8 h-8 rounded-full bg-red-100 text-status-error flex items-center justify-center font-black">
-                          {item.bloodGroup}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-bold text-secondary">
-                        {item.component}
-                      </td>
-                      <td className="py-4 px-6 font-black text-base text-primary">
-                        {item.unitsAvailable} <span className="text-xs font-normal text-medical-muted">Units</span>
-                      </td>
-                      <td className="py-4 px-6 font-semibold text-secondary">
-                        ₹{item.pricePerUnit || 1200}
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            item.status === 'Critical'
-                              ? 'bg-red-100 text-status-error'
-                              : item.status === 'Low Stock'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-green-100 text-status-success'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => {
-                            setBloodGroupReq(item.bloodGroup);
-                            setComponentReq(item.component);
-                            setRequestModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary-hover font-bold text-[11px] transition-all"
-                        >
-                          Request
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {ORDER.map((g) => {
+              const units = byGroup[g] || 0;
+              const tone = units <= 3 ? 'text-status-error bg-red-50' : units <= 8 ? 'text-amber-700 bg-amber-50' : 'text-status-success bg-green-50';
+              return (
+                <Link key={g} to={`/blood-bank/availability?group=${encodeURIComponent(g)}`} className={`rounded-2xl border border-medical-border p-4 text-center hover:shadow-soft transition-shadow ${tone}`}>
+                  <div className="text-lg font-black">{g}</div>
+                  <div className="text-2xl font-black mt-1">{units}</div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold opacity-70">units</div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
 
-      {/* Donor Eligibility & Voluntary Donation */}
-      <section className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Eligibility Criteria */}
-          <div className="lg:col-span-6 bg-white p-8 rounded-2xl border border-medical-border shadow-soft space-y-6">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Safety & Health Protocol</span>
-            </div>
-            <h3 className="text-2xl font-bold text-secondary">Who Can Donate Blood?</h3>
-            <p className="text-xs text-medical-muted leading-relaxed">
-              Every unit of voluntary blood donated can save up to 3 lives. Donors undergo free vital screening, hemoglobin checks, and receive a Brahm Shakti donor certificate.
-            </p>
-
-            <div className="space-y-3">
-              {[
-                'Age between 18 to 65 years with good general health',
-                'Body weight minimum 45 kg or above',
-                'Hemoglobin minimum 12.5 g/dL (tested on site)',
-                'No major surgery or blood transfusion in previous 6 months',
-                'Free from active viral infections (HIV, HBV, HCV, Syphilis, Malaria)',
-                'At least 3 months gap since last whole blood donation'
-              ].map((crit, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-xs text-secondary">
-                  <CheckCircle2 className="w-4 h-4 text-status-success shrink-0 mt-0.5" />
-                  <span>{crit}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Voluntary Donor Registration Card */}
-          <div className="lg:col-span-6 bg-gradient-to-br from-secondary to-secondary-dark text-white p-8 rounded-2xl shadow-xl space-y-6">
-            <div>
-              <span className="px-2.5 py-1 rounded bg-accent text-accent-dark text-[10px] font-bold uppercase tracking-wider">
-                Be a Life Saver
-              </span>
-              <h3 className="text-2xl font-black text-white mt-2">
-                Register as a Voluntary Donor
-              </h3>
-              <p className="text-xs text-slate-300 mt-1">
-                Pledge your donation at Brahm Shakti Hospital Blood Bank. Our team will contact you for a convenient scheduled slot.
-              </p>
-            </div>
-
-            {donationSuccess ? (
-              <div className="p-6 rounded-xl bg-white/10 border border-white/20 text-center space-y-2">
-                <CheckCircle2 className="w-10 h-10 text-accent mx-auto" />
-                <h4 className="font-bold text-white text-base">Pledge Registered Successfully</h4>
-                <p className="text-xs text-slate-300">
-                  Thank you, <strong>{donorName}</strong>. Our blood bank counselor will connect with you shortly.
-                </p>
-                <button
-                  onClick={() => setDonationSuccess(false)}
-                  className="mt-3 px-4 py-1.5 rounded-lg bg-accent text-secondary text-xs font-bold"
-                >
-                  Register Another
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleDonationSubmit} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-slate-300">Full Name</label>
-                  <input
-                    type="text"
-                    value={donorName}
-                    onChange={(e) => setDonorName(e.target.value)}
-                    placeholder="Enter donor name"
-                    required
-                    className="w-full p-2.5 rounded-xl bg-white/10 border border-white/20 text-xs text-white placeholder-slate-400 focus:outline-hidden focus:border-accent"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-slate-300">Phone</label>
-                    <input
-                      type="tel"
-                      value={donorPhone}
-                      onChange={(e) => setDonorPhone(e.target.value)}
-                      placeholder="+91-98XXXXXXXX"
-                      required
-                      className="w-full p-2.5 rounded-xl bg-white/10 border border-white/20 text-xs text-white placeholder-slate-400 focus:outline-hidden focus:border-accent"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-slate-300">Blood Group</label>
-                    <select
-                      value={donorGroup}
-                      onChange={(e) => setDonorGroup(e.target.value)}
-                      className="w-full p-2.5 rounded-xl bg-secondary-light border border-white/20 text-xs text-white focus:outline-hidden"
-                    >
-                      {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md"
-                >
-                  Pledge Blood Donation
-                </button>
-              </form>
-            )}
+      {/* Workflow Cards */}
+      <section className="max-w-7xl mx-auto px-4 space-y-5">
+        <h2 className="text-2xl font-bold text-secondary tracking-tight">Blood Bank Services</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {WORKFLOWS.map((w) => (
+            <Link key={w.to} to={w.to} className="group bg-white rounded-2xl border border-medical-border shadow-soft p-6 flex flex-col gap-3 hover:border-primary hover:shadow-md transition-all">
+              <span className={`w-11 h-11 rounded-xl ${w.bg} ${w.color} flex items-center justify-center`}><w.icon className="w-5 h-5" /></span>
+              <div className="text-base font-bold text-secondary">{w.title}</div>
+              <div className="text-xs text-medical-muted leading-relaxed flex-1">{w.desc}</div>
+              <div className={`inline-flex items-center gap-1.5 text-xs font-bold ${w.color}`}>Open <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" /></div>
+            </Link>
+          ))}
+          <div className="bg-gradient-to-br from-secondary to-secondary-dark rounded-2xl shadow-lg p-6 flex flex-col gap-3 text-white">
+            <span className="w-11 h-11 rounded-xl bg-white/10 text-accent flex items-center justify-center"><PhoneCall className="w-5 h-5" /></span>
+            <div className="text-base font-bold text-white">Emergency Desk</div>
+            <div className="text-xs text-slate-300 leading-relaxed flex-1">For immediate, life-saving requirements call our 24x7 blood bank desk alongside submitting a request.</div>
+            <a href="tel:7840089703" className="inline-flex items-center gap-1.5 text-xs font-bold text-accent">Call 7840089703 <ArrowRight className="w-4 h-4" /></a>
           </div>
         </div>
       </section>
 
-      {/* Blood Request Modal */}
-      {requestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-medical-border pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-red-100 text-status-error flex items-center justify-center font-bold">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-                <h3 className="text-lg font-bold text-secondary">Submit Blood Request</h3>
-              </div>
-              <button
-                onClick={() => setRequestModalOpen(false)}
-                className="text-medical-muted hover:text-secondary font-bold text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleBloodRequestSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-medical-muted">Patient Full Name</label>
-                <input
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="Patient name"
-                  required
-                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-medical-muted">Blood Group</label>
-                  <select
-                    value={bloodGroupReq}
-                    onChange={(e) => setBloodGroupReq(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-bold focus:border-primary focus:outline-hidden"
-                  >
-                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-medical-muted">Component</label>
-                  <select
-                    value={componentReq}
-                    onChange={(e) => setComponentReq(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                  >
-                    {[
-                      'Packed Red Blood Cells',
-                      'Whole Blood',
-                      'Platelets',
-                      'Fresh Frozen Plasma',
-                      'Cryoprecipitate'
-                    ].map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-medical-muted">Units Needed</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={unitsNeeded}
-                    onChange={(e) => setUnitsNeeded(e.target.value)}
-                    required
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-bold focus:border-primary focus:outline-hidden"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-medical-muted">Urgency Level</label>
-                  <select
-                    value={urgency}
-                    onChange={(e) => setUrgency(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-bold focus:border-primary focus:outline-hidden"
-                  >
-                    <option value="Normal">Normal (Elective)</option>
-                    <option value="Urgent">Urgent (Within 4 Hours)</option>
-                    <option value="Emergency">Emergency (Immediate Life Saving)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-medical-muted">Contact Mobile Phone</label>
-                <input
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  placeholder="+91-98XXXXXXXX"
-                  required
-                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-medical-muted">Hospital / Ward</label>
-                <input
-                  type="text"
-                  value={requestHospital}
-                  onChange={(e) => setRequestHospital(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                />
-              </div>
-
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRequestModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl border border-secondary text-secondary text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={reqLoading}
-                  className="flex-1 py-3 rounded-xl bg-status-error hover:bg-red-700 text-white text-xs font-bold shadow-md disabled:opacity-50"
-                >
-                  {reqLoading ? 'Submitting...' : 'Submit Urgent Request'}
-                </button>
-              </div>
-            </form>
+      {/* Safety strip */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="bg-white rounded-2xl border border-medical-border shadow-soft p-6 flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <ShieldCheck className="w-8 h-8 text-primary shrink-0" />
+            <p className="text-xs text-medical-muted leading-relaxed">Every unit is infection-screened per licensed blood bank regulations. Eligibility and issue decisions are made only by qualified personnel — expired units are never released.</p>
+          </div>
+          <div className="flex gap-3 shrink-0">
+            <Link to="/blood-bank/eligibility" className="px-4 py-2.5 rounded-xl border border-medical-border text-secondary text-xs font-bold hover:border-primary transition-colors">Eligibility</Link>
+            <Link to="/blood-bank/faq" className="px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors">Read FAQ</Link>
           </div>
         </div>
-      )}
+      </section>
     </div>
   );
 };

@@ -22,7 +22,10 @@ const generateToken = (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role = 'patient', phone = '' } = req.body;
+    // Public self-registration is exclusively for patients.
+    // Doctors, admins and all staff accounts are created internally by the Admin / Super Admin.
+    const { name, email, password, phone = '' } = req.body;
+    const role = 'patient';
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -127,7 +130,8 @@ export const login = async (req, res) => {
           status: user.status,
           doctorId: user.doctorId,
           patientId: user.patientId,
-          avatar: user.avatar
+          avatar: user.avatar,
+          mustChangePassword: user.mustChangePassword || false
         }
       });
     } else {
@@ -149,7 +153,8 @@ export const login = async (req, res) => {
             status: found.status,
             doctorId: found.doctorId,
             patientId: found.patientId,
-            avatar: found.avatar
+            avatar: found.avatar,
+            mustChangePassword: found.mustChangePassword || false
           }
         });
       }
@@ -183,13 +188,9 @@ export const getMe = async (req, res) => {
 };
 
 export const getDemoAccounts = (req, res) => {
+  // Staff & admin credentials are issued privately by the Super Admin.
+  // Only the patient demo account remains publicly available for evaluation.
   const accounts = [
-    { role: 'superadmin', label: 'Super Admin', email: 'superadmin@brahmshaktihospital.com', password: 'SuperAdmin@123', scope: 'Full System Access & Settings' },
-    { role: 'admin', label: 'Hospital Admin', email: 'admin@brahmshaktihospital.com', password: 'Admin@123', scope: 'Clinical & Operational Modules' },
-    { role: 'doctor', label: 'Doctor', email: 'doctor@brahmshaktihospital.com', password: 'Doctor@123', scope: 'OPD Schedule & Clinical Records' },
-    { role: 'pharmacist', label: 'Pharmacist', email: 'pharmacist@brahmshaktihospital.com', password: 'Pharmacist@123', scope: 'Drugs, Stock & Rx Verification' },
-    { role: 'supplier', label: 'Supplier', email: 'supplier@brahmshaktihospital.com', password: 'Supplier@123', scope: 'Purchase Orders & Shipments' },
-    { role: 'receptionist', label: 'Receptionist', email: 'receptionist@brahmshaktihospital.com', password: 'Receptionist@123', scope: 'OPD Check-in & Appointments' },
     { role: 'patient', label: 'Patient', email: 'patient@brahmshaktihospital.com', password: 'Patient@123', scope: 'My Appointments & Bills' }
   ];
 
@@ -197,4 +198,49 @@ export const getDemoAccounts = (req, res) => {
     success: true,
     accounts
   });
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current password and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long.' });
+    }
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ success: false, message: 'New password must be different from the current password.' });
+    }
+
+    if (isMongoConnected) {
+      const user = await User.findById(req.user._id || req.user.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User account not found.' });
+      }
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+      }
+      user.password = newPassword; // pre-save hook hashes it
+      user.mustChangePassword = false;
+      await user.save();
+      return res.status(200).json({ success: true, message: 'Password updated successfully.' });
+    }
+
+    // In-memory fallback (demo mode)
+    const found = usersData.find((u) => u.email.toLowerCase() === (req.user.email || '').toLowerCase());
+    if (!found) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+    if (found.password !== currentPassword) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+    }
+    found.password = newPassword;
+    found.mustChangePassword = false;
+    return res.status(200).json({ success: true, message: 'Password updated successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Password change failed', error: error.message });
+  }
 };

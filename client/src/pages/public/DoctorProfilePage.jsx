@@ -1,45 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
-  Stethoscope,
   Clock,
   Calendar,
   CheckCircle2,
-  Award,
   ShieldCheck,
-  Star,
   MapPin,
   ArrowLeft,
-  ChevronRight,
   PhoneCall,
-  Lock
+  IndianRupee
 } from 'lucide-react';
 import api from '../../services/api';
-import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
 
 export const DoctorProfilePage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Quick slot booking state
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedSlot, setSelectedSlot] = useState('10:00 AM - 10:30 AM');
-  const [patientName, setPatientName] = useState(user?.name || '');
-  const [patientPhone, setPatientPhone] = useState(user?.phone || '');
-  const [symptoms, setSymptoms] = useState('');
-  const [bookingLoading, setBookingLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      if (!patientName && user.name) setPatientName(user.name);
-      if (!patientPhone && user.phone) setPatientPhone(user.phone);
-    }
-  }, [user]);
 
   useEffect(() => {
     const fetchDoctor = async () => {
@@ -56,62 +32,6 @@ export const DoctorProfilePage = () => {
     };
     fetchDoctor();
   }, [id]);
-
-  const slots = [
-    '09:30 AM - 10:00 AM',
-    '10:00 AM - 10:30 AM',
-    '10:30 AM - 11:00 AM',
-    '11:30 AM - 12:00 PM',
-    '12:00 PM - 12:30 PM',
-    '02:00 PM - 02:30 PM',
-    '03:00 PM - 03:30 PM'
-  ];
-
-  const handleDirectBooking = async (e) => {
-    e.preventDefault();
-
-    if (!isAuthenticated) {
-      toast.error('Please log in to your patient account to book an appointment');
-      navigate('/login', {
-        state: {
-          from: `/appointments?doctor=${doctor.id}&department=${doctor.departmentId}`
-        }
-      });
-      return;
-    }
-
-    if (!patientName || !patientPhone) {
-      toast.error('Please enter patient name and contact number');
-      return;
-    }
-
-    setBookingLoading(true);
-    try {
-      const res = await api.post('/appointments', {
-        patientName,
-        patientPhone,
-        doctorId: doctor.id,
-        doctorName: doctor.name,
-        departmentId: doctor.departmentId,
-        departmentName: doctor.departmentName,
-        date: selectedDate,
-        timeSlot: selectedSlot,
-        appointmentType: 'OPD Consultation',
-        symptoms: symptoms || 'General OPD consultation request',
-        fee: doctor.consultationFee || 800,
-        paymentMethod: 'UPI'
-      });
-
-      if (res.data.success) {
-        toast.success(`Appointment Confirmed! ID: ${res.data.data.appointmentId}`);
-        navigate(`/appointments?confirmedId=${res.data.data.appointmentId}`);
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Booking failed');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -237,152 +157,70 @@ export const DoctorProfilePage = () => {
             </div>
           </div>
 
-          {/* Right Column: Interactive Appointment Booking Form */}
+          {/* Right Column: Appointment Portal Entry (live slot booking happens in the portal) */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-primary/20 shadow-elevated space-y-5">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-primary/20 shadow-elevated space-y-5 sticky top-24">
               <div>
                 <span className="px-2.5 py-1 rounded bg-accent text-accent-dark text-[10px] font-bold uppercase tracking-wider">
-                  Confirmed OPD Booking
+                  Appointment Portal
                 </span>
                 <h3 className="text-xl font-black text-secondary mt-2">
                   Book Slot with {doctor.name}
                 </h3>
                 <p className="text-xs text-medical-muted mt-1">
-                  Select your preferred consultation date and slot. Subsidized fee: ₹{doctor.consultationFee}.
+                  Choose a real-time OPD slot in the hospital consultation portal. No login required.
                 </p>
               </div>
 
-              {/* Login required banner */}
-              {!isAuthenticated ? (
-                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-amber-700 shrink-0" />
-                    <span>Login required to book appointments.</span>
-                  </div>
-                  <Link
-                    to="/login"
-                    state={{ from: `/appointments?doctor=${doctor.id}&department=${doctor.departmentId}` }}
-                    className="px-3 py-1.5 rounded-lg bg-secondary text-white font-bold text-xs whitespace-nowrap hover:bg-secondary-light transition-all shadow-xs"
-                  >
-                    Sign In ↗
-                  </Link>
+              {/* Fee snapshot */}
+              <div className="rounded-2xl border border-accent/50 bg-accent/10 p-4 space-y-2.5">
+                <p className="flex items-center gap-1.5 text-xs font-black text-accent-dark uppercase tracking-wide">
+                  <IndianRupee className="w-4 h-4" />
+                  Consultation Fees
+                </p>
+                <div className="flex items-center justify-between bg-white rounded-xl border border-medical-border px-3 py-2 text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary font-bold">Direct Consultation</span>
+                  <span className="text-sm font-black text-secondary">₹{doctor.consultationFee}</span>
                 </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-primary-50 border border-primary/20 text-xs text-secondary flex items-center justify-between gap-2">
-                  <div className="truncate">
-                    <span className="text-medical-muted text-[10px] block uppercase font-bold">Booking Profile</span>
-                    <strong className="text-primary truncate">{user?.name}</strong> ({user?.email})
-                  </div>
+                <div className="flex items-center justify-between bg-white rounded-xl border border-medical-border px-3 py-2 text-xs">
+                  <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary font-bold">Follow-up</span>
+                  <span className="text-sm font-black text-status-success">Free</span>
                 </div>
-              )}
+              </div>
 
-              <form onSubmit={handleDirectBooking} className="space-y-4">
-                {/* Select Date */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-medical-muted tracking-wider">
-                    Consultation Date
-                  </label>
-                  <input
-                    type="date"
-                    min={new Date().toISOString().split('T')[0]}
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    required
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                  />
+              {/* Chamber snapshot */}
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-medical-coolgray border border-medical-border">
+                  <Clock className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-semibold text-secondary">{doctor.opdSchedule}</span>
                 </div>
-
-                {/* Available Slots Pills */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-medical-muted tracking-wider">
-                    Available Time Slot
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {slots.map((slot) => (
-                      <button
-                        type="button"
-                        key={slot}
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`p-2 rounded-xl text-[11px] font-bold border transition-all ${
-                          selectedSlot === slot
-                            ? 'bg-primary text-white border-primary shadow-sm'
-                            : 'bg-medical-coolgray text-secondary border-medical-border hover:border-primary'
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-medical-coolgray border border-medical-border">
+                  <MapPin className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-semibold text-secondary">Chamber: <strong>{doctor.room || 'OPD Block'}</strong>, Brahm Shakti Hospital</span>
                 </div>
+              </div>
 
-                {/* Patient Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-medical-muted tracking-wider">
-                    Patient Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    placeholder="Enter full name"
-                    required
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                  />
-                </div>
+              <Link
+                to={`/appointments?doctor=${doctor.id}&department=${doctor.departmentId}`}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-md shadow-primary/20 transition-all"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Choose Slot &amp; Book Appointment</span>
+              </Link>
 
-                {/* Patient Phone */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-medical-muted tracking-wider">
-                    Mobile Number (for SMS & OPD token)
-                  </label>
-                  <input
-                    type="tel"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    placeholder="+91-98XXXXXXXX"
-                    required
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden"
-                  />
-                </div>
-
-                {/* Symptoms / Chief Complaint */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-medical-muted tracking-wider">
-                    Symptoms / Chief Complaint
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={symptoms}
-                    onChange={(e) => setSymptoms(e.target.value)}
-                    placeholder="Briefly describe health symptoms..."
-                    className="w-full p-2.5 rounded-xl border border-medical-border text-xs text-secondary font-medium focus:border-primary focus:outline-hidden resize-none"
-                  ></textarea>
-                </div>
-
-                {/* Fee Summary */}
-                <div className="p-3 rounded-xl bg-medical-coolgray border border-medical-border flex items-center justify-between text-xs">
-                  <span className="font-semibold text-secondary">Total Subsidized Fee:</span>
-                  <span className="text-base font-black text-primary">₹{doctor.consultationFee}</span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={bookingLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-md transition-all disabled:opacity-50"
+              <div className="pt-1 space-y-2">
+                <p className="flex items-center gap-2 text-[11px] text-medical-muted font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+                  Live availability from the hospital scheduler · UHID issued instantly on confirmation
+                </p>
+                <a
+                  href="tel:7840089703"
+                  className="flex items-center gap-2 text-[11px] font-bold text-status-error hover:underline"
                 >
-                  {isAuthenticated ? (
-                    <>
-                      <Calendar className="w-4 h-4" />
-                      <span>{bookingLoading ? 'Confirming...' : 'Confirm Appointment'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      <span>Sign In & Book Appointment</span>
-                    </>
-                  )}
-                </button>
-              </form>
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  Emergency? Call 24x7 helpline 7840089703
+                </a>
+              </div>
             </div>
           </div>
         </div>

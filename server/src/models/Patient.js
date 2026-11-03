@@ -6,6 +6,19 @@ const patientSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  // Unique Hospital Registration ID issued by the hospital registry.
+  // Kept distinct from the internal patientId so retrieval by (mobile + UHID)
+  // can be validated securely at the public booking flow.
+  uhid: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  // Optional link to a login User account
+  userId: {
+    type: String,
+    default: ''
+  },
   name: {
     type: String,
     required: true,

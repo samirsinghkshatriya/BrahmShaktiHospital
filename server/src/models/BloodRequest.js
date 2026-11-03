@@ -11,9 +11,30 @@ const bloodRequestSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    patientAge: {
+      type: Number,
+      default: null
+    },
+    patientGender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other', ''],
+      default: ''
+    },
+    patientUid: {
+      type: String,
+      default: ''
+    },
     hospitalName: {
       type: String,
       default: 'Brahm Shakti Hospital'
+    },
+    wardOrDepartment: {
+      type: String,
+      default: ''
+    },
+    prescribingDoctor: {
+      type: String,
+      default: ''
     },
     bloodGroup: {
       type: String,
@@ -40,12 +61,43 @@ const bloodRequestSchema = new mongoose.Schema(
     },
     doctorPrescription: {
       type: String,
-      default: 'Verified by Attending Medical Officer'
+      default: 'Pending verification by Blood Bank Medical Officer'
     },
+    prescriptionDocUrl: {
+      type: String,
+      default: ''
+    },
+    // Full request lifecycle. Final clinical/stock decisions are made by
+    // authorized blood bank personnel, never automatically.
     status: {
       type: String,
-      enum: ['Pending', 'Approved', 'Fulfilled', 'Rejected'],
-      default: 'Pending'
+      enum: [
+        'Submitted',
+        'Under Review',
+        'Approved',
+        'Partially Available',
+        'Available',
+        'Issued',
+        'Completed',
+        'Rejected'
+      ],
+      default: 'Submitted'
+    },
+    allocatedUnits: {
+      type: Number,
+      default: 0
+    },
+    issuedUnits: {
+      type: Number,
+      default: 0
+    },
+    reviewedBy: {
+      type: String,
+      default: ''
+    },
+    reviewNotes: {
+      type: String,
+      default: ''
     },
     notes: {
       type: String,

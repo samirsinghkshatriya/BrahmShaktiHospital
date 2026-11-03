@@ -4,12 +4,8 @@ import {
   Activity,
   User,
   Lock,
-  ArrowRight,
   ShieldCheck,
-  Sparkles,
-  KeyRound,
-  Calendar,
-  AlertCircle
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -18,7 +14,7 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login, switchDemoRole } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,7 +27,6 @@ export const LoginPage = () => {
   };
 
   const from = getRedirectDest();
-  const isFromAppointments = from && from.includes('/appointments');
 
   const getDashboardForRole = (role) => {
     switch (role) {
@@ -70,31 +65,6 @@ export const LoginPage = () => {
     }
   };
 
-  const quickFillAndLogin = async (roleName) => {
-    const creds = {
-      superadmin: { email: 'superadmin@brahmshaktihospital.com', password: 'SuperAdmin@123' },
-      admin: { email: 'admin@brahmshaktihospital.com', password: 'Admin@123' },
-      doctor: { email: 'doctor@brahmshaktihospital.com', password: 'Doctor@123' },
-      pharmacist: { email: 'pharmacist@brahmshaktihospital.com', password: 'Pharmacist@123' },
-      supplier: { email: 'supplier@brahmshaktihospital.com', password: 'Supplier@123' },
-      receptionist: { email: 'receptionist@brahmshaktihospital.com', password: 'Receptionist@123' },
-      patient: { email: 'patient@brahmshaktihospital.com', password: 'Patient@123' }
-    };
-
-    const target = creds[roleName];
-    if (target) {
-      setEmail(target.email);
-      setPassword(target.password);
-      setSubmitting(true);
-      const res = await login(target.email, target.password);
-      setSubmitting(false);
-      if (res?.success) {
-        const dest = from || getDashboardForRole(roleName);
-        navigate(dest, { replace: true });
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-medical-coolgray py-12 px-4 flex items-center justify-center">
       <div className="max-w-xl w-full space-y-6">
@@ -109,55 +79,9 @@ export const LoginPage = () => {
             Hospital Management System Login
           </h2>
           <p className="text-xs sm:text-sm text-medical-muted">
-            Secure Role-Based Portal for Staff, Clinicians, Suppliers & Patients
+            Restricted portal. Staff &amp; doctor credentials are issued by the Hospital Administrator.
+            Patients can sign in here or book appointments without any login.
           </p>
-        </div>
-
-        {/* Appointment Required Notice Banner */}
-        {isFromAppointments && (
-          <div className="bg-gradient-to-r from-primary-50 to-teal-50 border-2 border-primary/30 p-4 rounded-2xl flex items-start gap-3 text-secondary shadow-soft animate-in fade-in duration-300">
-            <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div className="space-y-0.5">
-              <div className="font-bold text-sm text-primary">Login Required to Book Appointment</div>
-              <p className="text-xs text-secondary/80 leading-relaxed">
-                Please sign in with your patient account or click the <strong>Patient</strong> demo badge below. You will be immediately redirected to complete your appointment booking.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* 1-Click Demo Accounts Selector */}
-        <div className="bg-white p-5 rounded-2xl border border-primary/20 shadow-soft space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-primary">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span>Instant 1-Click Demo Role Accounts</span>
-          </div>
-          <p className="text-[11px] text-medical-muted">
-            Click any role badge below to immediately authenticate and view that role's interface:
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {[
-              { id: 'superadmin', label: 'Super Admin' },
-              { id: 'admin', label: 'Hospital Admin' },
-              { id: 'doctor', label: 'Doctor' },
-              { id: 'pharmacist', label: 'Pharmacist' },
-              { id: 'supplier', label: 'Supplier' },
-              { id: 'receptionist', label: 'Receptionist' },
-              { id: 'patient', label: 'Patient' }
-            ].map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => quickFillAndLogin(r.id)}
-                className="px-2.5 py-2 rounded-xl text-left border border-medical-border hover:border-primary hover:bg-primary-50 transition-all text-xs font-semibold text-secondary"
-              >
-                <div className="font-bold text-primary">{r.label}</div>
-                <div className="text-[10px] text-medical-muted mt-0.5">Click to Login ↗</div>
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Regular Login Form */}
@@ -212,9 +136,14 @@ export const LoginPage = () => {
 
           <div className="pt-4 border-t border-medical-border flex items-center justify-between text-xs text-medical-muted">
             <span>New patient seeking care?</span>
-            <Link to="/register" state={{ from }} className="text-primary font-bold hover:underline">
-              Register New Account ↗
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link to="/consultation" className="text-medical-muted font-bold hover:text-primary hover:underline">
+                Book without login ↗
+              </Link>
+              <Link to="/register" state={{ from }} className="text-primary font-bold hover:underline">
+                Register New Account ↗
+              </Link>
+            </div>
           </div>
         </div>
 

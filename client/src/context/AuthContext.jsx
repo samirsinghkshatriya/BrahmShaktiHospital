@@ -72,6 +72,23 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await api.put('/auth/change-password', { currentPassword, newPassword });
+      if (response.data.success) {
+        const updatedUser = { ...(user || {}), mustChangePassword: false };
+        setUser(updatedUser);
+        localStorage.setItem('bsh_user', JSON.stringify(updatedUser));
+        toast.success('Password updated successfully.');
+        return { success: true };
+      }
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Password change failed.';
+      toast.error(msg);
+      return { success: false, message: msg };
+    }
+  };
+
   const switchDemoRole = async (targetRole) => {
     const roleCredentials = {
       superadmin: { email: 'superadmin@brahmshaktihospital.com', password: 'SuperAdmin@123' },
@@ -80,6 +97,7 @@ export const AuthProvider = ({ children }) => {
       pharmacist: { email: 'pharmacist@brahmshaktihospital.com', password: 'Pharmacist@123' },
       supplier: { email: 'supplier@brahmshaktihospital.com', password: 'Supplier@123' },
       receptionist: { email: 'receptionist@brahmshaktihospital.com', password: 'Receptionist@123' },
+      blood_bank_technician: { email: 'bloodbank@brahmshaktihospital.com', password: 'BloodBank@123' },
       patient: { email: 'patient@brahmshaktihospital.com', password: 'Patient@123' }
     };
 
@@ -100,6 +118,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        changePassword,
         switchDemoRole
       }}
     >

@@ -18,6 +18,7 @@ const doctorSchema = new mongoose.Schema(
     opdSchedule: { type: String, required: true },
     room: { type: String, default: 'OPD Chamber' },
     languages: [{ type: String }],
+    birthdate: { type: String, default: '' },
     image: { type: String },
     bio: { type: String, default: '' },
     isActive: { type: Boolean, default: true },

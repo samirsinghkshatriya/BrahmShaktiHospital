@@ -11,6 +11,10 @@ const bloodDonationSchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    dateOfBirth: {
+      type: String,
+      default: ''
+    },
     donorPhone: {
       type: String,
       required: true
@@ -24,10 +28,49 @@ const bloodDonationSchema = new mongoose.Schema(
       enum: ['Male', 'Female', 'Other'],
       default: 'Male'
     },
+    email: {
+      type: String,
+      default: ''
+    },
+    address: {
+      type: String,
+      default: ''
+    },
     bloodGroup: {
       type: String,
-      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'],
-      required: true
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'],
+      default: 'Unknown'
+    },
+    previousDonations: {
+      type: String,
+      default: ''
+    },
+    preferredDonationDate: {
+      type: String,
+      default: ''
+    },
+    // Donor-declared medical eligibility responses. These are informational
+    // only — they NEVER auto-declare a donor eligible. Final eligibility is
+    // determined exclusively by qualified blood bank personnel.
+    eligibilityAnswers: [
+      {
+        question: String,
+        answer: String
+      }
+    ],
+    consentGiven: {
+      type: Boolean,
+      default: false
+    },
+    // Donation application lifecycle (public submission -> staff review)
+    applicationStatus: {
+      type: String,
+      enum: ['Submitted', 'Under Review', 'Scheduled', 'Eligible', 'Deferred', 'Collected', 'Rejected'],
+      default: 'Submitted'
+    },
+    scheduledDonationDate: {
+      type: String,
+      default: ''
     },
     unitsDonated: {
       type: Number,
@@ -35,16 +78,25 @@ const bloodDonationSchema = new mongoose.Schema(
     },
     donationDate: {
       type: String,
-      required: true
+      default: ''
     },
     certificateNo: {
       type: String,
       default: ''
     },
+    // Staff-determined screening result. Defaults to Pending — never auto-passed.
     screeningStatus: {
       type: String,
-      enum: ['Passed', 'Pending', 'Deferred'],
-      default: 'Passed'
+      enum: ['Pending', 'Passed', 'Deferred'],
+      default: 'Pending'
+    },
+    screenedBy: {
+      type: String,
+      default: ''
+    },
+    batchNo: {
+      type: String,
+      default: ''
     }
   },
   { timestamps: true }

@@ -13,13 +13,20 @@ import DepartmentsPage from './pages/public/DepartmentsPage';
 import DepartmentDetailPage from './pages/public/DepartmentDetailPage';
 import DoctorsPage from './pages/public/DoctorsPage';
 import DoctorProfilePage from './pages/public/DoctorProfilePage';
-import AppointmentsPage from './pages/public/AppointmentsPage';
+import ConsultationPage from './pages/public/ConsultationPage';
 import OpdServicesPage from './pages/public/OpdServicesPage';
 import IpdServicesPage from './pages/public/IpdServicesPage';
 import BloodBankPage from './pages/public/BloodBankPage';
+import BloodAvailabilityPage from './pages/public/BloodAvailabilityPage';
+import BloodDonatePage from './pages/public/BloodDonatePage';
+import BloodRequestPage from './pages/public/BloodRequestPage';
+import BloodEligibilityPage from './pages/public/BloodEligibilityPage';
+import BloodFaqPage from './pages/public/BloodFaqPage';
 import PharmacyPage from './pages/public/PharmacyPage';
 import FacilitiesPage from './pages/public/FacilitiesPage';
 import ContactPage from './pages/public/ContactPage';
+import LabResultsPage from './pages/public/LabResultsPage';
+import SearchPage from './pages/public/SearchPage';
 
 // Auth Pages & Guards
 import LoginPage from './pages/auth/LoginPage';
@@ -70,19 +77,18 @@ export default function App() {
           <Route path="/departments/:id" element={<DepartmentDetailPage />} />
           <Route path="/doctors" element={<DoctorsPage />} />
           <Route path="/doctors/:id" element={<DoctorProfilePage />} />
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute>
-                <AppointmentsPage />
-              </ProtectedRoute>
-            }
-          />
           <Route path="/services/opd" element={<OpdServicesPage />} />
           <Route path="/services/ipd" element={<IpdServicesPage />} />
           <Route path="/blood-bank" element={<BloodBankPage />} />
+          <Route path="/blood-bank/availability" element={<BloodAvailabilityPage />} />
+          <Route path="/blood-bank/donate" element={<BloodDonatePage />} />
+          <Route path="/blood-bank/request" element={<BloodRequestPage />} />
+          <Route path="/blood-bank/eligibility" element={<BloodEligibilityPage />} />
+          <Route path="/blood-bank/faq" element={<BloodFaqPage />} />
           <Route path="/pharmacy" element={<PharmacyPage />} />
           <Route path="/facilities" element={<FacilitiesPage />} />
+          <Route path="/lab-results" element={<LabResultsPage />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Route>
 
@@ -90,6 +96,10 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* Standalone Appointment Portal (same UI for both entry URLs, no login required) */}
+        <Route path="/consultation" element={<ConsultationPage />} />
+        <Route path="/appointments" element={<ConsultationPage />} />
 
         {/* Protected Admin & Clinical Dashboards */}
         <Route
@@ -143,7 +153,7 @@ export default function App() {
           <Route
             path="/admin/blood-bank"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+              <ProtectedRoute allowedRoles={['admin', 'superadmin', 'blood_bank_technician']}>
                 <BloodBankManagementPage />
               </ProtectedRoute>
             }

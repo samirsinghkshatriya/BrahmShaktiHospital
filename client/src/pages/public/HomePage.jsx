@@ -402,7 +402,7 @@ export const HomePage = () => {
               {
                 name: 'Satish Narang',
                 treatment: 'Total Knee Replacement',
-                text: 'Dr. Rajesh Gupta and the orthopaedic team at Brahm Shakti Hospital gave me a second chance to walk without pain. Subsidized package made it truly affordable for our family.',
+                text: 'Dr. Dev Patel and the orthopaedic team at Brahm Shakti Hospital gave me a second chance to walk without pain. Subsidized package made it truly affordable for our family.',
                 location: 'Rohini, Sector 22'
               },
               {

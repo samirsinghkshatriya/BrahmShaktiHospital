@@ -20,7 +20,17 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['superadmin', 'admin', 'doctor', 'pharmacist', 'supplier', 'receptionist', 'patient'],
+    enum: [
+      'superadmin',
+      'admin',
+      'doctor',
+      'pharmacist',
+      'supplier',
+      'receptionist',
+      'blood_bank_technician',
+      'laboratory_technician',
+      'patient'
+    ],
     default: 'patient'
   },
   phone: {
@@ -39,6 +49,10 @@ const userSchema = new mongoose.Schema({
   patientId: {
     type: String,
     default: null
+  },
+  mustChangePassword: {
+    type: Boolean,
+    default: false
   },
   avatar: {
     type: String,

@@ -12,13 +12,16 @@ import Department from '../models/Department.js';
 import Doctor from '../models/Doctor.js';
 import Patient from '../models/Patient.js';
 import Appointment from '../models/Appointment.js';
+import AppointmentSlot from '../models/AppointmentSlot.js';
 import BloodInventory from '../models/BloodInventory.js';
 import BloodRequest from '../models/BloodRequest.js';
 import BloodDonation from '../models/BloodDonation.js';
+import BloodInventoryTransaction from '../models/BloodInventoryTransaction.js';
 import PharmacyProduct from '../models/PharmacyProduct.js';
 import Billing from '../models/Billing.js';
 import PurchaseOrder from '../models/PurchaseOrder.js';
 import { News } from '../models/News.js';
+import LabReport from '../models/LabReport.js';
 
 import {
   usersData,
@@ -32,7 +35,8 @@ import {
   pharmacyProductsData,
   billingsData,
   purchaseOrdersData,
-  newsArticlesData
+  newsArticlesData,
+  labReportsData
 } from '../data/seedData.js';
 
 const seedDatabase = async () => {
@@ -49,13 +53,16 @@ const seedDatabase = async () => {
       Doctor.deleteMany({}),
       Patient.deleteMany({}),
       Appointment.deleteMany({}),
+      AppointmentSlot.deleteMany({}),
       BloodInventory.deleteMany({}),
       BloodRequest.deleteMany({}),
       BloodDonation.deleteMany({}),
+      BloodInventoryTransaction.deleteMany({}),
       PharmacyProduct.deleteMany({}),
       Billing.deleteMany({}),
       PurchaseOrder.deleteMany({}),
-      News.deleteMany({})
+      News.deleteMany({}),
+      LabReport.deleteMany({})
     ]);
     console.log('[Seed] Old collections cleared.');
 
@@ -68,7 +75,7 @@ const seedDatabase = async () => {
     // Insert other collections
     await Department.insertMany(departmentsData);
     await Doctor.insertMany(doctorsData);
-    await Patient.insertMany(patientsData);
+    await Patient.insertMany(patientsData.map((p) => ({ ...p, uhid: p.uhid || p.patientId })));
     await Appointment.insertMany(appointmentsData);
     await BloodInventory.insertMany(bloodInventoryData);
     await BloodRequest.insertMany(bloodRequestsData);
@@ -77,6 +84,7 @@ const seedDatabase = async () => {
     await Billing.insertMany(billingsData);
     await PurchaseOrder.insertMany(purchaseOrdersData);
     await News.insertMany(newsArticlesData);
+    await LabReport.insertMany(labReportsData);
 
     console.log('====================================================');
     console.log('  BRAHM SHAKTI HOSPITAL DATABASE SEEDING COMPLETED  ');
@@ -91,6 +99,7 @@ const seedDatabase = async () => {
     console.log(`✓ Pharmacy Drugs:   ${pharmacyProductsData.length}`);
     console.log(`✓ Invoices/Bills:   ${billingsData.length}`);
     console.log(`✓ Purchase Orders:  ${purchaseOrdersData.length}`);
+    console.log(`✓ Lab Reports:      ${labReportsData.length}`);
     console.log('====================================================');
 
     process.exit(0);

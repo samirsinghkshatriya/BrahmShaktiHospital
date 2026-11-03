@@ -1,8 +1,19 @@
 import { Doctor } from '../models/Doctor.js';
-import { doctorsData } from '../data/seedData.js';
+import User from '../models/User.js';
+import { doctorsData, usersData } from '../data/seedData.js';
 import { isMongoConnected } from '../config/db.js';
 
 let inMemoryDoctors = [...doctorsData];
+
+// Initial doctor login password = birthdate formatted as DDMMYYYY
+export const birthdateToInitialPassword = (birthdate) => {
+  if (!birthdate) return null;
+  const d = new Date(birthdate);
+  if (Number.isNaN(d.getTime())) return null;
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${dd}${mm}${d.getUTCFullYear()}`;
+};
 
 export const getDoctors = async (req, res, next) => {
   try {
@@ -107,15 +118,28 @@ export const getDoctorById = async (req, res, next) => {
 
 export const createDoctor = async (req, res, next) => {
   try {
-    const { name, departmentId, departmentName, qualification, designation, experienceYears, consultationFee, availableDays, availableTimings } = req.body;
+    const { name, departmentId, departmentName, qualification, designation, experienceYears, consultationFee, availableDays, availableTimings, email, phone, birthdate } = req.body;
     if (!name || !departmentId) {
       return res.status(400).json({ success: false, message: 'Doctor name and department are required.' });
+    }
+    if (!email || !birthdate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor email and birthdate are required to issue login credentials (initial password is the birthdate in DDMMYYYY format).'
+      });
+    }
+    const initialPassword = birthdateToInitialPassword(birthdate);
+    if (!initialPassword) {
+      return res.status(400).json({ success: false, message: 'Invalid birthdate format. Use a valid date (YYYY-MM-DD).' });
     }
 
     const id = `doc-${departmentId.slice(0, 4)}-${Date.now().toString().slice(-4)}`;
     const newDoc = {
       id,
       name,
+      email: email.toLowerCase(),
+      phone: phone || '',
+      birthdate,
       departmentId,
       departmentName: departmentName || departmentId,
       qualification: qualification || 'MBBS, MD',
@@ -133,12 +157,48 @@ export const createDoctor = async (req, res, next) => {
     };
 
     if (isMongoConnected) {
+      const existingAccount = await User.findOne({ email: newDoc.email });
+      if (existingAccount) {
+        return res.status(409).json({ success: false, message: 'A login account with this doctor email already exists.' });
+      }
       const doc = await Doctor.create(newDoc);
-      return res.status(201).json({ success: true, message: 'Doctor added successfully', data: doc });
+      // Admin-issued doctor portal account: password = DDMMYYYY of birthdate
+      await User.create({
+        name: newDoc.name,
+        email: newDoc.email,
+        password: initialPassword,
+        role: 'doctor',
+        doctorId: id,
+        phone: newDoc.phone,
+        status: 'active',
+        mustChangePassword: true,
+        avatar: newDoc.image
+      });
+      return res.status(201).json({
+        success: true,
+        message: 'Doctor added successfully. Share the login credentials below with the doctor.',
+        data: doc,
+        credentials: { email: newDoc.email, initialPassword, rule: 'Password is the doctor birthdate in DDMMYYYY format; doctor can change it after first login.' }
+      });
     }
 
+    // In-memory fallback (demo mode)
     inMemoryDoctors.unshift(newDoc);
-    return res.status(201).json({ success: true, message: 'Doctor added successfully', data: newDoc });
+    usersData.push({
+      name: newDoc.name,
+      email: newDoc.email,
+      password: initialPassword,
+      role: 'doctor',
+      doctorId: id,
+      phone: newDoc.phone,
+      status: 'active'
+    });
+    return res.status(201).json({
+      success: true,
+      message: 'Doctor added successfully. Share the login credentials below with the doctor.',
+      data: newDoc,
+      credentials: { email: newDoc.email, initialPassword, rule: 'Password is the doctor birthdate in DDMMYYYY format; doctor can change it after first login.' }
+    });
   } catch (error) {
     next(error);
   }
